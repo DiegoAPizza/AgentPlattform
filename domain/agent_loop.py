@@ -2,7 +2,8 @@ from domain.ports.llm_port import LLMPort
 from domain.ports.memory_port import MemoryPort
 from domain.ports.tool_port import ToolPort
 from domain.ports.storage_port import StoragePort
-from domain.models import AgentState,AgentStep
+from domain.models import AgentState,AgentStep,ToolCall
+import json
 
 
 
@@ -62,7 +63,7 @@ class AgentLoop:
                     # El puerto ToolPort se encarga del harness y permisos internamente
                     step.observation = self.tools.execute(
                         tool_name=tool_name, 
-                        tool_input=step.action.tool_input
+                        tool_input=step.action.input
                     )
                 except Exception as e:
                     step.observation = f"Error ejecutando la herramienta '{tool_name}': {str(e)}"
@@ -85,9 +86,7 @@ class AgentLoop:
         
         return state
         
-        # en vez de context.add_message → self.memory.add_message()
-        # en vez de harness.execute → self.tools.execute()
-        # en vez de ltm.store → self.storage.store()
+      
 
 
 def parse_llm_response(text: str) -> AgentStep:

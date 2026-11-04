@@ -1,0 +1,52 @@
+# ==========================================
+# ETAPA 1: Builder (La imagen "gorda")
+# ==========================================
+FROM python:3.12-slim AS builder
+
+WORKDIR /app
+
+# Instalamos dependencias del sistema necesarias para compilar (si hicieran falta)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalamos las dependencias de Python en un entorno aislado
+COPY requirements.txt .
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
+
+
+# ==========================================
+# ETAPA 2: Runner (La imagen "flaca" de producción)
+# ==========================================
+FROM python:3.12-slim
+
+# Aplicamos actualizaciones de seguridad a los paquetes del sistema de la imagen base.
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Creamos un usuario no root por seguridad (¡Muy importante en producción!)
+RUN addgroup --system app && adduser --system --group app
+
+# Copiamos solo las ruedas (wheels) compiladas de la etapa anterior
+COPY --from=builder /app/wheels /wheels
+COPY --from=builder /app/requirements.txt .
+
+# Instalamos desde las ruedas (ultra rápido) y limpiamos
+RUN pip install --no-cache /wheels/* \
+    && rm -rf /wheels
+
+# Copiamos el código de nuestra aplicación
+COPY domain/ ./domain/
+COPY adapters/ ./adapters/
+COPY api/ ./api/
+
+# Cambiamos al usuario no root
+USER app
+
+# Exponemos el puerto de FastAPI
+EXPOSE 8000
+
+# Comando de arranque
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]

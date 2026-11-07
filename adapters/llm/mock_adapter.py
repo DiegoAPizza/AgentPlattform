@@ -9,4 +9,4 @@ class MockLLMAdapter(LLMPort):
 
     def invoke(self, messages: list[dict]) -> str:
         self.received_messages.append(messages)  # ← agregar esto
-        return "Thought: test\nFinal Answer: mock response"
+        return self.predefined_response

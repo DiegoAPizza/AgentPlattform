@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 class MemoryPort(ABC):
     @abstractmethod
-    def get_message(self) -> list[dict]:
+    def get_messages(self) -> list[dict]:
         pass
     @abstractmethod
     
